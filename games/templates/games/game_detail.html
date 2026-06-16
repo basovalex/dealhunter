@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ game.title }} — DealHunter{% endblock %}
+
+{% block content %}
+<h1>{{ game.title }}</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h4>Текущие цены</h4>
+        <table class="table">
+            <thead><tr><th>Магазин</th><th>Цена</th><th>Без скидки</th><th>Скидка</th></tr></thead>
+            <tbody>
+            {% for snap in latest_snapshots %}
+                <tr>
+                    <td>{{ snap.store.name }}</td>
+                    <td>{{ snap.price }}</td>
+                    <td>{{ snap.regular_price }}</td>
+                    <td>{{ snap.cut }}%</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Данные ещё не собраны</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h4>Индекс выгодности</h4>
+        {% if score is not None %}
+            <p><span class="badge bg-primary fs-5">{{ score }} / 100</span> — {{ score_label }}</p>
+        {% else %}
+            <p class="text-muted">Данные ещё не собраны</p>
+        {% endif %}
+        <p>Исторический минимум: {{ game.historical_low|default:"н/д" }}</p>
+    </div>
+</div>
+
+{% if chart %}
+<h4>История цен</h4>
+<div class="mb-4">{{ chart|safe }}</div>
+{% endif %}
+
+{% if user.is_authenticated %}
+{% include "games/_watchlist_form.html" %}
+{% else %}
+<p><a href="{% url 'login' %}">Войдите</a>, чтобы отслеживать эту игру и задать целевую цену.</p>
+{% endif %}
+{% endblock %}
