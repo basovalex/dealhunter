@@ -1,7 +1,12 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, redirect
+from django.views import View
 from django.views.generic import DetailView, ListView
 
 from . import analytics
-from .models import Game, Store
+from .forms import WatchlistForm
+from .models import Game, Store, Watchlist
 
 
 class CatalogListView(ListView):
@@ -54,4 +59,30 @@ class GameDetailView(DetailView):
         context['score'] = analytics.compute_deal_score(game)
         context['score_label'] = analytics.score_label(context['score'])
         context['chart'] = analytics.price_history_chart(game)
+        if self.request.user.is_authenticated:
+            context['already_watching'] = Watchlist.objects.filter(user=self.request.user, game=game).exists()
+            context['watchlist_form'] = WatchlistForm()
         return context
+
+
+class WatchlistAddView(LoginRequiredMixin, View):
+    def post(self, request, slug):
+        game = get_object_or_404(Game, slug=slug)
+        form = WatchlistForm(request.POST, user=request.user, game=game)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'«{game.title}» добавлена в список отслеживания.')
+        else:
+            for errors in form.errors.values():
+                for error in errors:
+                    messages.error(request, error)
+        return redirect('game_detail', slug=slug)
+
+
+class ProfileView(LoginRequiredMixin, ListView):
+    template_name = 'games/profile.html'
+    context_object_name = 'rows'
+
+    def get_queryset(self):
+        entries = Watchlist.objects.filter(user=self.request.user).select_related('game')
+        return [{'entry': entry, 'snapshot': analytics.best_current_price(entry.game)} for entry in entries]
