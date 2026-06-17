@@ -1,0 +1,16 @@
+asgiref==3.11.1
+certifi==2026.6.17
+charset-normalizer==3.4.7
+Django==5.2.15
+idna==3.18
+narwhals==2.22.1
+numpy==2.4.6
+packaging==26.2
+pandas==3.0.3
+plotly==6.8.0
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
+requests==2.34.2
+six==1.17.0
+sqlparse==0.5.5
+urllib3==2.7.0
