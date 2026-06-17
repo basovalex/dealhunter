@@ -40,6 +40,7 @@ class PriceSnapshot(models.Model):
     regular_price = models.DecimalField(max_digits=8, decimal_places=2)
     cut = models.IntegerField()
     recorded_at = models.DateTimeField()
+    url = models.URLField(max_length=500, blank=True)
 
     class Meta:
         ordering = ['-recorded_at']

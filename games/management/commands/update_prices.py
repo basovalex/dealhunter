@@ -11,7 +11,7 @@ BATCH_SIZE = 20
 
 
 class Command(BaseCommand):
-    help = 'Fetch current prices and historical lows from ITAD, store snapshots, update watchlist flags (UC-3)'
+    help = 'Загружает текущие цены и исторический минимум из ITAD, создаёт снимки цен, обновляет флаги в watchlist (UC-3)'
 
     def handle(self, *args, **options):
         try:
@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
         games = list(Game.objects.all())
         if not games:
-            self.stdout.write(self.style.WARNING('No games in catalog. Run seed_catalog first.'))
+            self.stdout.write(self.style.WARNING('В каталоге нет игр. Сначала запустите seed_catalog.'))
             return
 
         stores_by_itad_id = {s.itad_store_id: s for s in Store.objects.all()}
@@ -49,6 +49,7 @@ class Command(BaseCommand):
                         regular_price=Decimal(str(deal['regular']['amount'])),
                         cut=deal.get('cut', 0),
                         recorded_at=now,
+                        url=deal.get('url', ''),
                     )
 
                 history_low = entry.get('historyLow', {}).get('all', {}).get('amount')
@@ -56,11 +57,11 @@ class Command(BaseCommand):
                     game.historical_low = Decimal(str(history_low))
                     game.save(update_fields=['historical_low'])
 
-            self.stdout.write(f'Updated {len(batch)} games ({batch_start + len(batch)}/{len(games)})')
+            self.stdout.write(f'Обновлено игр: {len(batch)} ({batch_start + len(batch)}/{len(games)})')
             time.sleep(1)
 
         self._update_watchlist_notifications()
-        self.stdout.write(self.style.SUCCESS('Price update complete.'))
+        self.stdout.write(self.style.SUCCESS('Обновление цен завершено.'))
 
     def _update_watchlist_notifications(self):
         for entry in Watchlist.objects.select_related('game'):
