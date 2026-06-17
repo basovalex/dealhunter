@@ -44,8 +44,8 @@ class ITADClient:
         return self._get('/games/lookup/v1', params)
 
     def get_shops(self, country=None):
-        """GET /shops/v1 - active shops for a country."""
-        return self._get('/shops/v1', {'country': country or self.country})
+        """GET /service/shops/v1 - active shops for a country."""
+        return self._get('/service/shops/v1', {'country': country or self.country})
 
     def get_prices(self, game_ids, country=None, shops=None):
         """POST /games/prices/v3 - current prices for a list of ITAD game ids."""
@@ -55,7 +55,10 @@ class ITADClient:
         return self._post('/games/prices/v3', list(game_ids), params)
 
     def get_historical_low(self, game_ids, country=None):
-        """POST /games/historylow/v1 - historical low price for a list of ITAD game ids."""
+        """POST /games/historylow/v1 - historical low price for a list of ITAD game ids.
+
+        Response shape: [{"id": ..., "low": {"shop": {...}, "price": {"amount": ...}, ...}}]
+        """
         params = {'country': country or self.country}
         return self._post('/games/historylow/v1', list(game_ids), params)
 

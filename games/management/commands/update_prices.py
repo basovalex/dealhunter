@@ -32,8 +32,6 @@ class Command(BaseCommand):
             ids = [g.itad_id for g in batch]
 
             prices = client.get_prices(ids)
-            lows = client.get_historical_low(ids)
-            lows_by_id = {row['id']: row for row in lows}
 
             now = timezone.now()
             for entry in prices:
@@ -53,9 +51,9 @@ class Command(BaseCommand):
                         recorded_at=now,
                     )
 
-                low = lows_by_id.get(entry['id'])
-                if low and low.get('low'):
-                    game.historical_low = Decimal(str(low['low']['amount']))
+                history_low = entry.get('historyLow', {}).get('all', {}).get('amount')
+                if history_low is not None:
+                    game.historical_low = Decimal(str(history_low))
                     game.save(update_fields=['historical_low'])
 
             self.stdout.write(f'Updated {len(batch)} games ({batch_start + len(batch)}/{len(games)})')
