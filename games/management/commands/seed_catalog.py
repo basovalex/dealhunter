@@ -3,6 +3,7 @@ import time
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.text import slugify
 
+from games.constants import TRUSTED_STORE_NAMES
 from games.itad_client import ITADClient, ITADError
 from games.models import Game, Store
 
@@ -30,7 +31,7 @@ DEMO_TITLES = [
 
 
 class Command(BaseCommand):
-    help = 'Seed Store and Game catalog from IsThereAnyDeal for demo purposes'
+    help = 'Наполняет каталог магазинами и играми из IsThereAnyDeal (демо-данные)'
 
     def handle(self, *args, **options):
         try:
@@ -38,7 +39,7 @@ class Command(BaseCommand):
         except ITADError as exc:
             raise CommandError(str(exc))
 
-        shops = client.get_shops()
+        shops = [shop for shop in client.get_shops() if (shop.get('title') or shop.get('name')) in TRUSTED_STORE_NAMES]
         created_stores = 0
         for shop in shops:
             shop_id = str(shop.get('id'))
@@ -48,13 +49,13 @@ class Command(BaseCommand):
                 defaults={'name': name, 'slug': slugify(name)},
             )
             created_stores += int(created)
-        self.stdout.write(self.style.SUCCESS(f'Stores: {created_stores} created, {len(shops)} total seen'))
+        self.stdout.write(self.style.SUCCESS(f'Магазины: {created_stores} создано, {len(shops)} официальных магазинов найдено'))
 
         created_games = 0
         for title in DEMO_TITLES:
             result = client.lookup_game(title=title)
             if not result.get('found'):
-                self.stdout.write(self.style.WARNING(f'Not found on ITAD: {title}'))
+                self.stdout.write(self.style.WARNING(f'Не найдено в ITAD: {title}'))
                 continue
             game_info = result['game']
             _, created = Game.objects.update_or_create(
@@ -67,4 +68,4 @@ class Command(BaseCommand):
             created_games += int(created)
             time.sleep(0.5)
 
-        self.stdout.write(self.style.SUCCESS(f'Games: {created_games} created out of {len(DEMO_TITLES)} titles'))
+        self.stdout.write(self.style.SUCCESS(f'Игры: {created_games} создано из {len(DEMO_TITLES)} названий'))
