@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from games.currency import usd_to_rub
 from games.itad_client import ITADClient, ITADError
 from games.models import Game, PriceSnapshot, Store, Watchlist
 
@@ -68,13 +69,14 @@ class Command(BaseCommand):
             latest = PriceSnapshot.objects.filter(game=entry.game).order_by('-recorded_at').first()
             if latest is None:
                 continue
-            best_price = (
+            best_price_usd = (
                 PriceSnapshot.objects.filter(game=entry.game, recorded_at=latest.recorded_at)
                 .order_by('price')
                 .values_list('price', flat=True)
                 .first()
             )
-            should_notify = best_price is not None and best_price <= entry.target_price
+            best_price_rub = usd_to_rub(best_price_usd) if best_price_usd is not None else None
+            should_notify = best_price_rub is not None and best_price_rub <= entry.target_price
             if should_notify != entry.is_notified:
                 entry.is_notified = should_notify
                 entry.save(update_fields=['is_notified'])

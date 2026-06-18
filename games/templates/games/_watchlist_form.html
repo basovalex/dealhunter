@@ -2,6 +2,7 @@
 <p class="text-success">Вы уже отслеживаете эту игру. Статус — в <a href="{% url 'profile' %}">личном кабинете</a>.</p>
 {% else %}
 <h4>Отслеживать игру</h4>
+<p class="text-muted small">Целевая цена указывается в рублях — мы сравним её с текущей лучшей ценой (пересчитанной из $ по курсу ЦБ РФ).</p>
 <form method="post" action="{% url 'watchlist_add' game.slug %}" class="row g-2 align-items-center">
     {% csrf_token %}
     <div class="col-auto">

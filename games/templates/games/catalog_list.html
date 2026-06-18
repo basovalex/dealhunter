@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load currency_tags %}
 
 {% block title %}Каталог игр — DealHunter{% endblock %}
 
@@ -26,15 +27,23 @@
 {% if store_aggregates %}
 <div class="mb-4">
     <h5>Агрегаты по магазинам</h5>
-    <p class="text-muted small">Цены в долларах США ($) — это валюта, в которой IsThereAnyDeal отдаёт данные по выбранному региону. Перевода в рубли нет, чтобы не показывать неточный курс.</p>
+    <p class="text-muted small">IsThereAnyDeal отдаёт цены в долларах США, мы пересчитываем в рубли по курсу ЦБ РФ (в скобках — исходная цена в $).</p>
     <table class="table table-sm">
         <thead><tr><th>Магазин</th><th>Средняя цена</th><th>Минимальная цена</th><th>Игр в наличии</th></tr></thead>
         <tbody>
         {% for row in store_aggregates %}
             <tr>
                 <td>{{ row.store__name }}</td>
-                <td>${{ row.avg_price|floatformat:2 }}</td>
-                <td>${{ row.min_price|floatformat:2 }}</td>
+                <td>
+                    {% with rub=row.avg_price|to_rub %}
+                        {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ row.avg_price|floatformat:2 }}){% else %}${{ row.avg_price|floatformat:2 }}{% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with rub=row.min_price|to_rub %}
+                        {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ row.min_price|floatformat:2 }}){% else %}${{ row.min_price|floatformat:2 }}{% endif %}
+                    {% endwith %}
+                </td>
                 <td>{{ row.games_count }}</td>
             </tr>
         {% endfor %}
@@ -71,7 +80,12 @@
                 <h5 class="card-title"><a href="{{ row.game.get_absolute_url }}">{{ row.game.title }}</a></h5>
                 {% if row.snapshot %}
                     <p class="card-text">
-                        <strong>${{ row.snapshot.price|floatformat:2 }}</strong> ({{ row.snapshot.store.name }})
+                        {% with rub=row.snapshot.price|to_rub %}
+                            <strong>
+                                {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ row.snapshot.price|floatformat:2 }}){% else %}${{ row.snapshot.price|floatformat:2 }}{% endif %}
+                            </strong>
+                        {% endwith %}
+                        ({{ row.snapshot.store.name }})
                         {% if row.snapshot.cut %}<span class="badge bg-danger">-{{ row.snapshot.cut }}%</span>{% endif %}
                         {% if row.snapshot.url %}
                             <br><a href="{{ row.snapshot.url }}" target="_blank" rel="noopener" class="small">Перейти в магазин →</a>

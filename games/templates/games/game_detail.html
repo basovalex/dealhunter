@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load currency_tags %}
 
 {% block title %}{{ game.title }} — DealHunter{% endblock %}
 
@@ -8,15 +9,23 @@
 <div class="row mb-4">
     <div class="col-md-6">
         <h4>Текущие цены</h4>
-        <p class="text-muted small">Цены в долларах США ($), магазины — только официальные лицензионные продавцы ключей.</p>
+        <p class="text-muted small">Цены пересчитаны в рубли по курсу ЦБ РФ (в скобках — исходная цена в $). Магазины — только официальные лицензионные продавцы ключей.</p>
         <table class="table">
             <thead><tr><th>Магазин</th><th>Цена</th><th>Без скидки</th><th>Скидка</th><th></th></tr></thead>
             <tbody>
             {% for snap in latest_snapshots %}
                 <tr>
                     <td>{{ snap.store.name }}</td>
-                    <td>${{ snap.price|floatformat:2 }}</td>
-                    <td>${{ snap.regular_price|floatformat:2 }}</td>
+                    <td>
+                        {% with rub=snap.price|to_rub %}
+                            {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ snap.price|floatformat:2 }}){% else %}${{ snap.price|floatformat:2 }}{% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with rub=snap.regular_price|to_rub %}
+                            {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ snap.regular_price|floatformat:2 }}){% else %}${{ snap.regular_price|floatformat:2 }}{% endif %}
+                        {% endwith %}
+                    </td>
                     <td>{{ snap.cut }}%</td>
                     <td>
                         {% if snap.url %}
@@ -38,7 +47,11 @@
             <p class="text-muted">Данные ещё не собраны</p>
         {% endif %}
         <p>Исторический минимум:
-            {% if game.historical_low %}${{ game.historical_low|floatformat:2 }}{% else %}н/д{% endif %}
+            {% if game.historical_low %}
+                {% with rub=game.historical_low|to_rub %}
+                    {% if rub %}{{ rub|floatformat:0 }} ₽ (${{ game.historical_low|floatformat:2 }}){% else %}${{ game.historical_low|floatformat:2 }}{% endif %}
+                {% endwith %}
+            {% else %}н/д{% endif %}
         </p>
     </div>
 </div>
