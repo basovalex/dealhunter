@@ -1,4 +1,4 @@
-"""Курс USD->RUB для отображения цен в рублях (ITAD отдаёт цены только в USD/EUR)."""
+"""Курс USD->RUB для отображения цен в рублях."""
 from decimal import Decimal
 
 import requests

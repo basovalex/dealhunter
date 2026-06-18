@@ -7,7 +7,7 @@ from games.constants import TRUSTED_STORE_NAMES
 from games.itad_client import ITADClient, ITADError
 from games.models import Game, Store
 
-# Fixed list of well-known titles used to populate a demo catalog (UC: admin fills the catalog).
+# Fixed list of well-known titles used to populate a demo catalog.
 DEMO_TITLES = [
     "The Witcher 3: Wild Hunt",
     "Cyberpunk 2077",
@@ -27,7 +27,7 @@ DEMO_TITLES = [
     "HITMAN World of Assassination",
     "Divinity: Original Sin 2 - Definitive Edition",
     "Sekiro: Shadows Die Twice - GOTY Edition",
-    # Дополнительные игры — расширяем каталог тем, на что у ITAD есть реальные цены.
+    # Игры с реальными предложениями в ITAD.
     "Grand Theft Auto V",
     "Red Dead Redemption 2",
     "It Takes Two",
@@ -40,7 +40,7 @@ DEMO_TITLES = [
 
 
 class Command(BaseCommand):
-    help = 'Наполняет каталог магазинами и играми из IsThereAnyDeal (демо-данные)'
+    help = 'Наполняет каталог магазинами и играми из IsThereAnyDeal'
 
     def handle(self, *args, **options):
         try:
@@ -48,7 +48,11 @@ class Command(BaseCommand):
         except ITADError as exc:
             raise CommandError(str(exc))
 
-        shops = [shop for shop in client.get_shops() if (shop.get('title') or shop.get('name')) in TRUSTED_STORE_NAMES]
+        shops = [
+            shop
+            for shop in client.get_shops()
+            if (shop.get('title') or shop.get('name')) in TRUSTED_STORE_NAMES
+        ]
         created_stores = 0
         for shop in shops:
             shop_id = str(shop.get('id'))
@@ -58,7 +62,10 @@ class Command(BaseCommand):
                 defaults={'name': name, 'slug': slugify(name)},
             )
             created_stores += int(created)
-        self.stdout.write(self.style.SUCCESS(f'Магазины: {created_stores} создано, {len(shops)} официальных магазинов найдено'))
+        self.stdout.write(self.style.SUCCESS(
+            f'Магазины: {created_stores} создано, '
+            f'{len(shops)} официальных магазинов найдено'
+        ))
 
         created_games = 0
         for title in DEMO_TITLES:
@@ -77,4 +84,6 @@ class Command(BaseCommand):
             created_games += int(created)
             time.sleep(0.5)
 
-        self.stdout.write(self.style.SUCCESS(f'Игры: {created_games} создано из {len(DEMO_TITLES)} названий'))
+        self.stdout.write(self.style.SUCCESS(
+            f'Игры: {created_games} создано из {len(DEMO_TITLES)} названий'
+        ))

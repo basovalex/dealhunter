@@ -11,6 +11,18 @@ class GameSearchForm(forms.Form):
     )
 
 
+class AddGameForm(forms.Form):
+    itad_id = forms.CharField(max_length=64, widget=forms.HiddenInput)
+    title = forms.CharField(max_length=200, widget=forms.HiddenInput)
+    slug = forms.SlugField(max_length=220, required=False, widget=forms.HiddenInput)
+
+    def clean_itad_id(self):
+        return self.cleaned_data['itad_id'].strip()
+
+    def clean_title(self):
+        return self.cleaned_data['title'].strip()
+
+
 class WatchlistForm(forms.ModelForm):
     class Meta:
         model = Watchlist

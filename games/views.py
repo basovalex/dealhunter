@@ -6,7 +6,7 @@ from django.views import View
 from django.views.generic import DetailView, ListView
 
 from . import analytics
-from .forms import GameSearchForm, WatchlistForm
+from .forms import AddGameForm, GameSearchForm, WatchlistForm
 from .itad_client import ITADClient, ITADError
 from .models import Game, Store, Watchlist
 from .services import sync_prices_for_games
@@ -88,11 +88,14 @@ class ProfileView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         entries = Watchlist.objects.filter(user=self.request.user).select_related('game')
-        return [{'entry': entry, 'snapshot': analytics.best_current_price(entry.game)} for entry in entries]
+        return [
+            {'entry': entry, 'snapshot': analytics.best_current_price(entry.game)}
+            for entry in entries
+        ]
 
 
 class AddGameView(UserPassesTestMixin, View):
-    """Поиск игры в ITAD и добавление её в каталог (замена фиксированного demo-списка)."""
+    """Поиск игры в ITAD и добавление её в каталог."""
     template_name = 'games/add_game.html'
 
     def test_func(self):
@@ -110,13 +113,14 @@ class AddGameView(UserPassesTestMixin, View):
         return render(request, self.template_name, {'form': form, 'results': results})
 
     def post(self, request):
-        itad_id = request.POST.get('itad_id')
-        title = request.POST.get('title')
-        slug_source = request.POST.get('slug') or title
-        if not itad_id or not title:
+        form = AddGameForm(request.POST)
+        if not form.is_valid():
             messages.error(request, 'Некорректные данные игры.')
             return redirect('add_game')
 
+        itad_id = form.cleaned_data['itad_id']
+        title = form.cleaned_data['title']
+        slug_source = form.cleaned_data['slug'] or title
         game, created = Game.objects.get_or_create(
             itad_id=itad_id,
             defaults={'title': title, 'slug': slugify(slug_source)},
@@ -127,5 +131,9 @@ class AddGameView(UserPassesTestMixin, View):
         except ITADError as exc:
             messages.error(request, str(exc))
         else:
-            messages.success(request, f'«{game.title}» добавлена в каталог.' if created else f'«{game.title}» уже была в каталоге, цены обновлены.')
+            if created:
+                message = f'«{game.title}» добавлена в каталог.'
+            else:
+                message = f'«{game.title}» уже была в каталоге, цены обновлены.'
+            messages.success(request, message)
         return redirect('game_detail', slug=game.slug)

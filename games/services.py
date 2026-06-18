@@ -1,7 +1,4 @@
-"""Общая логика синхронизации цен с ITAD — используется и management-командой
-update_prices (массовое обновление), и AddGameView (синхронизация одной
-только что добавленной игры), чтобы не дублировать код (TZ.md §7).
-"""
+"""Общая логика синхронизации цен с ITAD."""
 import time
 from decimal import Decimal
 
@@ -13,9 +10,7 @@ BATCH_SIZE = 20
 
 
 def sync_prices_for_games(client, games):
-    """Запрашивает текущие цены и исторический минимум для переданных игр,
-    создаёт PriceSnapshot и обновляет Game.historical_low.
-    """
+    """Создаёт PriceSnapshot и обновляет Game.historical_low."""
     stores_by_itad_id = {s.itad_store_id: s for s in Store.objects.all()}
     game_list = list(games)
     games_by_itad_id = {g.itad_id: g for g in game_list}

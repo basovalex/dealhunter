@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from .analytics import best_current_price, compute_deal_score, latest_snapshots, score_label
-from .forms import WatchlistForm
+from .forms import AddGameForm, WatchlistForm
 from .models import Game, PriceSnapshot, Store, Watchlist
 
 
@@ -69,3 +69,22 @@ class WatchlistFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn('Эта игра уже в списке отслеживания.', form.non_field_errors())
+
+
+class AddGameFormTests(TestCase):
+    def test_add_game_form_validates_hidden_result_payload(self):
+        form = AddGameForm(data={
+            'itad_id': '018d937f-4752-7157-b839-0a54a430a0e5',
+            'title': 'Hades',
+            'slug': 'hades',
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['title'], 'Hades')
+
+    def test_add_game_form_requires_external_id_and_title(self):
+        form = AddGameForm(data={'itad_id': '', 'title': ''})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('itad_id', form.errors)
+        self.assertIn('title', form.errors)

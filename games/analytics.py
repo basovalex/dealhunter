@@ -73,31 +73,43 @@ def store_aggregates():
 
 def top_deals(limit=10):
     """Best current Deal Score across the whole catalog."""
-    scored = [(game, score) for game in Game.objects.all() if (score := compute_deal_score(game)) is not None]
+    scored = [
+        (game, score)
+        for game in Game.objects.all()
+        if (score := compute_deal_score(game)) is not None
+    ]
     scored.sort(key=lambda pair: pair[1], reverse=True)
     return scored[:limit]
 
 
 def price_history_chart(game):
-    """Возвращает HTML-фрагмент с графиком, либо None, если снимков цен ещё нет."""
+    """Возвращает HTML-график или None."""
     df = _snapshots_dataframe(game)
     if df.empty:
         return None
     df = df.sort_values('recorded_at')
 
     if df['recorded_at'].nunique() <= 1:
-        # Собран только один снимок цен — линия по одной точке выглядит как сломанный график,
-        # поэтому показываем точки и расширяем ось X, чтобы её было видно.
+        # Для одного снимка показываем точки и расширяем ось X.
         fig = px.scatter(
-            df, x='recorded_at', y='price', color='store',
+            df,
+            x='recorded_at',
+            y='price',
+            color='store',
             labels={'recorded_at': 'Дата', 'price': 'Цена ($)', 'store': 'Магазин'},
             title=f'История цен: {game.title} (накоплен только один снимок)',
         )
         point = df['recorded_at'].iloc[0]
-        fig.update_xaxes(range=[point - pd.Timedelta(days=1), point + pd.Timedelta(days=1)])
+        fig.update_xaxes(
+            range=[point - pd.Timedelta(days=1), point + pd.Timedelta(days=1)]
+        )
     else:
         fig = px.line(
-            df, x='recorded_at', y='price', color='store', markers=True,
+            df,
+            x='recorded_at',
+            y='price',
+            color='store',
+            markers=True,
             labels={'recorded_at': 'Дата', 'price': 'Цена ($)', 'store': 'Магазин'},
             title=f'История цен: {game.title}',
         )
