@@ -14,7 +14,7 @@ DEMO_TITLES = [
     "Stardew Valley",
     "Hades",
     "Hollow Knight",
-    "Disco Elysium",
+    "Disco Elysium - The Final Cut",
     "Baldur's Gate 3",
     "Elden Ring",
     "Portal 2",
@@ -24,9 +24,18 @@ DEMO_TITLES = [
     "Outer Wilds",
     "Slay the Spire",
     "Subnautica",
-    "Hitman 3",
-    "Divinity: Original Sin 2",
-    "Sekiro: Shadows Die Twice",
+    "HITMAN World of Assassination",
+    "Divinity: Original Sin 2 - Definitive Edition",
+    "Sekiro: Shadows Die Twice - GOTY Edition",
+    # Дополнительные игры — расширяем каталог тем, на что у ITAD есть реальные цены.
+    "Grand Theft Auto V",
+    "Red Dead Redemption 2",
+    "It Takes Two",
+    "Resident Evil 4 (2023)",
+    "Persona 5 Royal",
+    "DEATH STRANDING DIRECTOR'S CUT",
+    "Cult of the Lamb",
+    "Vampire Survivors",
 ]
 
 
