@@ -17,10 +17,11 @@
     {% for row in rows %}
         <tr>
             <td><a href="{{ row.entry.game.get_absolute_url }}">{{ row.entry.game.title }}</a></td>
-            <td>{{ row.entry.target_price }}</td>
+            <td>${{ row.entry.target_price|floatformat:2 }}</td>
             <td>
                 {% if row.snapshot %}
-                    {{ row.snapshot.price }} ({{ row.snapshot.store.name }})
+                    ${{ row.snapshot.price|floatformat:2 }} ({{ row.snapshot.store.name }})
+                    {% if row.snapshot.url %}<a href="{{ row.snapshot.url }}" target="_blank" rel="noopener" class="small">→</a>{% endif %}
                 {% else %}
                     н/д
                 {% endif %}

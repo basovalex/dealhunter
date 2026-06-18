@@ -26,14 +26,15 @@
 {% if store_aggregates %}
 <div class="mb-4">
     <h5>Агрегаты по магазинам</h5>
+    <p class="text-muted small">Цены в долларах США ($) — это валюта, в которой IsThereAnyDeal отдаёт данные по выбранному региону. Перевода в рубли нет, чтобы не показывать неточный курс.</p>
     <table class="table table-sm">
         <thead><tr><th>Магазин</th><th>Средняя цена</th><th>Минимальная цена</th><th>Игр в наличии</th></tr></thead>
         <tbody>
         {% for row in store_aggregates %}
             <tr>
                 <td>{{ row.store__name }}</td>
-                <td>{{ row.avg_price|floatformat:2 }}</td>
-                <td>{{ row.min_price }}</td>
+                <td>${{ row.avg_price|floatformat:2 }}</td>
+                <td>${{ row.min_price|floatformat:2 }}</td>
                 <td>{{ row.games_count }}</td>
             </tr>
         {% endfor %}
@@ -70,8 +71,11 @@
                 <h5 class="card-title"><a href="{{ row.game.get_absolute_url }}">{{ row.game.title }}</a></h5>
                 {% if row.snapshot %}
                     <p class="card-text">
-                        <strong>{{ row.snapshot.price }}</strong> ({{ row.snapshot.store.name }})
+                        <strong>${{ row.snapshot.price|floatformat:2 }}</strong> ({{ row.snapshot.store.name }})
                         {% if row.snapshot.cut %}<span class="badge bg-danger">-{{ row.snapshot.cut }}%</span>{% endif %}
+                        {% if row.snapshot.url %}
+                            <br><a href="{{ row.snapshot.url }}" target="_blank" rel="noopener" class="small">Перейти в магазин →</a>
+                        {% endif %}
                     </p>
                 {% else %}
                     <p class="text-muted">Данные ещё не собраны</p>

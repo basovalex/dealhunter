@@ -8,18 +8,24 @@
 <div class="row mb-4">
     <div class="col-md-6">
         <h4>Текущие цены</h4>
+        <p class="text-muted small">Цены в долларах США ($), магазины — только официальные лицензионные продавцы ключей.</p>
         <table class="table">
-            <thead><tr><th>Магазин</th><th>Цена</th><th>Без скидки</th><th>Скидка</th></tr></thead>
+            <thead><tr><th>Магазин</th><th>Цена</th><th>Без скидки</th><th>Скидка</th><th></th></tr></thead>
             <tbody>
             {% for snap in latest_snapshots %}
                 <tr>
                     <td>{{ snap.store.name }}</td>
-                    <td>{{ snap.price }}</td>
-                    <td>{{ snap.regular_price }}</td>
+                    <td>${{ snap.price|floatformat:2 }}</td>
+                    <td>${{ snap.regular_price|floatformat:2 }}</td>
                     <td>{{ snap.cut }}%</td>
+                    <td>
+                        {% if snap.url %}
+                            <a href="{{ snap.url }}" target="_blank" rel="noopener">Купить →</a>
+                        {% endif %}
+                    </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4">Данные ещё не собраны</td></tr>
+                <tr><td colspan="5">Данные ещё не собраны</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -31,7 +37,9 @@
         {% else %}
             <p class="text-muted">Данные ещё не собраны</p>
         {% endif %}
-        <p>Исторический минимум: {{ game.historical_low|default:"н/д" }}</p>
+        <p>Исторический минимум:
+            {% if game.historical_low %}${{ game.historical_low|floatformat:2 }}{% else %}н/д{% endif %}
+        </p>
     </div>
 </div>
 
