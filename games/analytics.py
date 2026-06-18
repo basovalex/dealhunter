@@ -79,14 +79,27 @@ def top_deals(limit=10):
 
 
 def price_history_chart(game):
+    """Возвращает HTML-фрагмент с графиком, либо None, если снимков цен ещё нет."""
     df = _snapshots_dataframe(game)
     if df.empty:
         return None
     df = df.sort_values('recorded_at')
-    fig = px.line(
-        df, x='recorded_at', y='price', color='store',
-        labels={'recorded_at': 'Дата', 'price': 'Цена', 'store': 'Магазин'},
-        title=f'История цен: {game.title}',
-    )
+
+    if df['recorded_at'].nunique() <= 1:
+        # Собран только один снимок цен — линия по одной точке выглядит как сломанный график,
+        # поэтому показываем точки и расширяем ось X, чтобы её было видно.
+        fig = px.scatter(
+            df, x='recorded_at', y='price', color='store',
+            labels={'recorded_at': 'Дата', 'price': 'Цена ($)', 'store': 'Магазин'},
+            title=f'История цен: {game.title} (накоплен только один снимок)',
+        )
+        point = df['recorded_at'].iloc[0]
+        fig.update_xaxes(range=[point - pd.Timedelta(days=1), point + pd.Timedelta(days=1)])
+    else:
+        fig = px.line(
+            df, x='recorded_at', y='price', color='store', markers=True,
+            labels={'recorded_at': 'Дата', 'price': 'Цена ($)', 'store': 'Магазин'},
+            title=f'История цен: {game.title}',
+        )
     fig.update_layout(margin=dict(l=20, r=20, t=40, b=20), height=400)
     return fig.to_html(full_html=False, include_plotlyjs='cdn')
