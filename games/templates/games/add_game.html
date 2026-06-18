@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить игру — DealHunter{% endblock %}
+
+{% block content %}
+<h1>Добавить игру в каталог</h1>
+<p class="text-muted small">Поиск идёт напрямую по базе IsThereAnyDeal — можно добавить любую игру, не только из демо-списка.</p>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        {{ form.query }}
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Искать</button>
+    </div>
+</form>
+
+{% if form.errors %}
+<div class="alert alert-danger">{{ form.errors }}</div>
+{% endif %}
+
+{% if results %}
+<table class="table">
+    <thead><tr><th>Название</th><th></th></tr></thead>
+    <tbody>
+    {% for item in results %}
+        <tr>
+            <td>{{ item.title }}</td>
+            <td>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="itad_id" value="{{ item.id }}">
+                    <input type="hidden" name="title" value="{{ item.title }}">
+                    <input type="hidden" name="slug" value="{{ item.slug }}">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Добавить</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% elif form.is_bound and form.is_valid %}
+<p class="text-muted">Ничего не найдено.</p>
+{% endif %}
+{% endblock %}

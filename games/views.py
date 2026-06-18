@@ -1,12 +1,15 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.text import slugify
 from django.views import View
 from django.views.generic import DetailView, ListView
 
 from . import analytics
-from .forms import WatchlistForm
+from .forms import GameSearchForm, WatchlistForm
+from .itad_client import ITADClient, ITADError
 from .models import Game, Store, Watchlist
+from .services import sync_prices_for_games
 
 
 class CatalogListView(ListView):
@@ -86,3 +89,43 @@ class ProfileView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         entries = Watchlist.objects.filter(user=self.request.user).select_related('game')
         return [{'entry': entry, 'snapshot': analytics.best_current_price(entry.game)} for entry in entries]
+
+
+class AddGameView(UserPassesTestMixin, View):
+    """Поиск игры в ITAD и добавление её в каталог (замена фиксированного demo-списка)."""
+    template_name = 'games/add_game.html'
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request):
+        form = GameSearchForm(request.GET or None)
+        results = []
+        if form.is_valid():
+            try:
+                client = ITADClient()
+                results = client.search_games(form.cleaned_data['query'])
+            except ITADError as exc:
+                messages.error(request, str(exc))
+        return render(request, self.template_name, {'form': form, 'results': results})
+
+    def post(self, request):
+        itad_id = request.POST.get('itad_id')
+        title = request.POST.get('title')
+        slug_source = request.POST.get('slug') or title
+        if not itad_id or not title:
+            messages.error(request, 'Некорректные данные игры.')
+            return redirect('add_game')
+
+        game, created = Game.objects.get_or_create(
+            itad_id=itad_id,
+            defaults={'title': title, 'slug': slugify(slug_source)},
+        )
+        try:
+            client = ITADClient()
+            sync_prices_for_games(client, [game])
+        except ITADError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, f'«{game.title}» добавлена в каталог.' if created else f'«{game.title}» уже была в каталоге, цены обновлены.')
+        return redirect('game_detail', slug=game.slug)

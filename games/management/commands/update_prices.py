@@ -1,14 +1,9 @@
-import time
-from decimal import Decimal
-
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
 
 from games.currency import usd_to_rub
 from games.itad_client import ITADClient, ITADError
-from games.models import Game, PriceSnapshot, Store, Watchlist
-
-BATCH_SIZE = 20
+from games.models import Game, PriceSnapshot, Watchlist
+from games.services import sync_prices_for_games
 
 
 class Command(BaseCommand):
@@ -25,41 +20,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('В каталоге нет игр. Сначала запустите seed_catalog.'))
             return
 
-        stores_by_itad_id = {s.itad_store_id: s for s in Store.objects.all()}
-        games_by_itad_id = {g.itad_id: g for g in games}
-
-        for batch_start in range(0, len(games), BATCH_SIZE):
-            batch = games[batch_start:batch_start + BATCH_SIZE]
-            ids = [g.itad_id for g in batch]
-
-            prices = client.get_prices(ids)
-
-            now = timezone.now()
-            for entry in prices:
-                game = games_by_itad_id.get(entry['id'])
-                if game is None:
-                    continue
-                for deal in entry.get('deals', []):
-                    store = stores_by_itad_id.get(str(deal['shop']['id']))
-                    if store is None:
-                        continue
-                    PriceSnapshot.objects.create(
-                        game=game,
-                        store=store,
-                        price=Decimal(str(deal['price']['amount'])),
-                        regular_price=Decimal(str(deal['regular']['amount'])),
-                        cut=deal.get('cut', 0),
-                        recorded_at=now,
-                        url=deal.get('url', ''),
-                    )
-
-                history_low = entry.get('historyLow', {}).get('all', {}).get('amount')
-                if history_low is not None:
-                    game.historical_low = Decimal(str(history_low))
-                    game.save(update_fields=['historical_low'])
-
-            self.stdout.write(f'Обновлено игр: {len(batch)} ({batch_start + len(batch)}/{len(games)})')
-            time.sleep(1)
+        created = sync_prices_for_games(client, games)
+        self.stdout.write(f'Создано снимков цен: {created} (игр: {len(games)})')
 
         self._update_watchlist_notifications()
         self.stdout.write(self.style.SUCCESS('Обновление цен завершено.'))

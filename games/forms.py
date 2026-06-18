@@ -3,6 +3,14 @@ from django import forms
 from .models import Watchlist
 
 
+class GameSearchForm(forms.Form):
+    query = forms.CharField(
+        label='Название игры',
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: Hades'}),
+    )
+
+
 class WatchlistForm(forms.ModelForm):
     class Meta:
         model = Watchlist

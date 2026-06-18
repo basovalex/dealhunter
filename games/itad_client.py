@@ -43,6 +43,10 @@ class ITADClient:
         params = {'title': title} if title else {'appid': appid}
         return self._get('/games/lookup/v1', params)
 
+    def search_games(self, title, results=10):
+        """GET /games/search/v1 - fuzzy title search, returns a list of {id, slug, title}."""
+        return self._get('/games/search/v1', {'title': title, 'results': results})
+
     def get_shops(self, country=None):
         """GET /service/shops/v1 - active shops for a country."""
         return self._get('/service/shops/v1', {'country': country or self.country})
