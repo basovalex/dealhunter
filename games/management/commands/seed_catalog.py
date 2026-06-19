@@ -48,11 +48,14 @@ class Command(BaseCommand):
         except ITADError as exc:
             raise CommandError(str(exc))
 
-        shops = [
-            shop
-            for shop in client.get_shops()
-            if (shop.get('title') or shop.get('name')) in TRUSTED_STORE_NAMES
-        ]
+        try:
+            shops = [
+                shop
+                for shop in client.get_shops()
+                if (shop.get('title') or shop.get('name')) in TRUSTED_STORE_NAMES
+            ]
+        except ITADError as exc:
+            raise CommandError(str(exc))
         created_stores = 0
         for shop in shops:
             shop_id = str(shop.get('id'))
@@ -69,7 +72,10 @@ class Command(BaseCommand):
 
         created_games = 0
         for title in DEMO_TITLES:
-            result = client.lookup_game(title=title)
+            try:
+                result = client.lookup_game(title=title)
+            except ITADError as exc:
+                raise CommandError(str(exc))
             if not result.get('found'):
                 self.stdout.write(self.style.WARNING(f'Не найдено в ITAD: {title}'))
                 continue

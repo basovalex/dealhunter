@@ -5,6 +5,7 @@ modification of the data it returns, per TZ.md section 7.
 """
 import requests
 from django.conf import settings
+from requests import HTTPError, RequestException
 
 BASE_URL = 'https://api.isthereanydeal.com'
 DEFAULT_COUNTRY = 'US'
@@ -25,16 +26,41 @@ class ITADClient:
     def _get(self, path, params=None):
         params = dict(params or {})
         params['key'] = self.api_key
-        response = self.session.get(f'{BASE_URL}{path}', params=params, timeout=15)
-        response.raise_for_status()
+        try:
+            response = self.session.get(f'{BASE_URL}{path}', params=params, timeout=15)
+        except RequestException as exc:
+            raise ITADError(f'ITAD API request failed at {path}.') from exc
+        self._raise_for_status(response, path)
         return response.json()
 
     def _post(self, path, json_body, params=None):
         params = dict(params or {})
         params['key'] = self.api_key
-        response = self.session.post(f'{BASE_URL}{path}', params=params, json=json_body, timeout=15)
-        response.raise_for_status()
+        try:
+            response = self.session.post(
+                f'{BASE_URL}{path}',
+                params=params,
+                json=json_body,
+                timeout=15,
+            )
+        except RequestException as exc:
+            raise ITADError(f'ITAD API request failed at {path}.') from exc
+        self._raise_for_status(response, path)
         return response.json()
+
+    def _raise_for_status(self, response, path):
+        try:
+            response.raise_for_status()
+        except HTTPError as exc:
+            status = response.status_code
+            reason = response.reason or 'HTTP error'
+            if status in (401, 403):
+                hint = ' Check ITAD_API_KEY and API permissions.'
+            else:
+                hint = ''
+            raise ITADError(f'ITAD API request failed: {status} {reason} at {path}.{hint}') from exc
+        except RequestException as exc:
+            raise ITADError(f'ITAD API request failed at {path}.') from exc
 
     def lookup_game(self, title=None, appid=None):
         """GET /games/lookup/v1 - resolve a title or Steam appid to an ITAD game id."""

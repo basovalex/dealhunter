@@ -1,11 +1,14 @@
 from decimal import Decimal
+from unittest.mock import Mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
+from requests import HTTPError
 
 from .analytics import best_current_price, compute_deal_score, latest_snapshots, score_label
 from .forms import AddGameForm, WatchlistForm
+from .itad_client import ITADClient, ITADError
 from .models import Game, PriceSnapshot, Store, Watchlist
 
 
@@ -88,3 +91,27 @@ class AddGameFormTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('itad_id', form.errors)
         self.assertIn('title', form.errors)
+
+
+class ITADClientTests(TestCase):
+    def test_http_errors_do_not_expose_api_key(self):
+        client = ITADClient(api_key='secret-token')
+        response = Mock(
+            status_code=403,
+            reason='Forbidden',
+            raise_for_status=Mock(
+                side_effect=HTTPError(
+                    '403 Client Error: Forbidden for url: '
+                    'https://api.isthereanydeal.com/games/lookup/v1?key=secret-token'
+                )
+            ),
+        )
+
+        with self.assertRaises(ITADError) as context:
+            client._raise_for_status(response, '/games/lookup/v1')
+
+        message = str(context.exception)
+        self.assertIn('403 Forbidden', message)
+        self.assertIn('/games/lookup/v1', message)
+        self.assertNotIn('secret-token', message)
+        self.assertNotIn('key=', message)

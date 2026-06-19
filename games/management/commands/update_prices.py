@@ -25,7 +25,10 @@ class Command(BaseCommand):
             ))
             return
 
-        created = sync_prices_for_games(client, games)
+        try:
+            created = sync_prices_for_games(client, games)
+        except ITADError as exc:
+            raise CommandError(str(exc))
         self.stdout.write(f'Создано снимков цен: {created} (игр: {len(games)})')
 
         self._update_watchlist_notifications()
