@@ -21,7 +21,7 @@
 ## Стек
 
 - Python 3.12, Django 5.2
-- [IsThereAnyDeal API v2](https://docs.isthereanydeal.com/) (`requests`) — текущие цены, история, исторический минимум
+- [IsThereAnyDeal API v2](https://docs.isthereanydeal.com/) (`requests`) — текущие цены и исторический минимум; история в сервисе накапливается через `PriceSnapshot`
 - Pandas — расчёт индекса выгодности (Deal Score) и агрегатов
 - Plotly — интерактивный график истории цен
 - Bootstrap 5 — вёрстка, наследование шаблонов (`{% extends %}`)
